@@ -31,34 +31,9 @@ BINDIR      = ./build
 OBJDIR      = ./build
 LIBDIR      = /mnt/d/Rodolphe/Ubuntu/FBX/lib/gcc4/$(ARCH)/$(VARIANT)
 INCDIR      = /mnt/d/Rodolphe/Ubuntu/FBX/include
-COMMONDIR   = ../Common
 
 TARGET      = $(BINDIR)/$(EXAMPLE)
 OBJS  = \
-	$(COMMONDIR)/Common.o\
-	./DrawScene.o\
-	./DrawText.o\
-	./GetPosition.o\
-	./SceneCache.o\
-	./SceneContext.o\
-	./GlFunctions.o\
-	./SetCamera.o\
-	./targa.o\
-	./main.o
-
-OBJSFINAL  = \
-	$(OBJDIR)/Common.o\
-	$(OBJDIR)/DrawScene.o\
-	$(OBJDIR)/DrawText.o\
-	$(OBJDIR)/GetPosition.o\
-	$(OBJDIR)/SceneCache.o\
-	$(OBJDIR)/SceneContext.o\
-	$(OBJDIR)/GlFunctions.o\
-	$(OBJDIR)/SetCamera.o\
-	$(OBJDIR)/targa.o\
-	$(OBJDIR)/main.o
-
-OBJSFINAL  = \
 	./Common.o\
 	./DrawScene.o\
 	./DrawText.o\
@@ -99,13 +74,9 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	mkdir -p $(BINDIR)
 #	$(LD) $(LDFLAGS) -o $@ $(OBJSFINAL) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS) $(RPATH_DEF)
-	$(LD) $(LDFLAGS) -o $@ $(OBJSFINAL) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS)
 	cp *.fbx $(BINDIR)
 	cp FBX_ASCII_TEXTURE $(BINDIR)
-
-$(COMMONDIR)/Common.o: $(COMMONDIR)/Common.cxx
-	mkdir -p $(OBJDIR)
-	$(CC) $(CXXFLAGS) -I$(INCDIR) -c $(COMMONDIR)/Common.cxx -o $(OBJDIR)/Common.o
 
 .c.o:
 	mkdir -p $(OBJDIR)
