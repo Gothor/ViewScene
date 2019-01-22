@@ -456,6 +456,7 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
 }
 
 extern GLuint _quad;
+static int _counter = 0;
 
 void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 {
@@ -465,24 +466,26 @@ void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 	#pragma warning( disable : 4312)
 #endif
 
-    // {
-         // std::cout << "Nb triangles: " << mSubMeshes[pMaterialIndex]->TriangleCount << std::endl;
+    {
+        std::cout << "(" << _counter << ") Nb triangles: " << mSubMeshes[pMaterialIndex]->TriangleCount << std::endl;
 
-    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-    //     GLuint id[3];
-    //     glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, 3 * sizeof(GLuint), id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
+        GLuint id[3];
+        glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, _counter * 3 * sizeof(GLuint), 3 * sizeof(GLuint), id);
         
-    //     glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-    //     GLfloat data[12];
-    //     glGetBufferSubData(GL_ARRAY_BUFFER, id[0] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), data);
-    //     glGetBufferSubData(GL_ARRAY_BUFFER, id[1] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE]);
-    //     glGetBufferSubData(GL_ARRAY_BUFFER, id[2] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE * 2]);
-    //     std::cout << "(" << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ")"
-    //          << ", (" << data[4] << ", " << data[5] << ", " << data[6] << ", " << data[7] << ")"
-    //          << ", (" << data[8] << ", " << data[9] << ", " << data[10] << ", " << data[11] << ")" << std::endl;
+        glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
+        GLfloat data[12];
+        glGetBufferSubData(GL_ARRAY_BUFFER, id[0] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), data);
+        glGetBufferSubData(GL_ARRAY_BUFFER, id[1] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE]);
+        glGetBufferSubData(GL_ARRAY_BUFFER, id[2] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE * 2]);
+        std::cout << "(" << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ")"
+             << ", (" << data[4] << ", " << data[5] << ", " << data[6] << ", " << data[7] << ")"
+             << ", (" << data[8] << ", " << data[9] << ", " << data[10] << ", " << data[11] << ")" << std::endl;
              
-    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-    // }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
+
+        _counter++;
+    }
 
     // Where to start.
     GLsizei lOffset = mSubMeshes[pMaterialIndex]->IndexOffset * sizeof(unsigned int);
