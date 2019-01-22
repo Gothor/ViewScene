@@ -16,7 +16,7 @@ this software in either electronic or hard copy form.
 #include "DrawScene.h"
 #include "DrawText.h"
 #include "targa.h"
-#include "../Common/Common.h"
+#include "Common.h"
 #include <iostream>
 
 namespace
