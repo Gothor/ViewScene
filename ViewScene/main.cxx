@@ -197,7 +197,7 @@ int main(int argc, char** argv)
 static void init(void)
 {
     _pId = gl4duCreateProgram("<vs>../shaders/basic.vs", "<fs>../shaders/basic.fs", NULL);
-    glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
+    glClearColor(1.0f, 0.2f, 0.2f, 0.0f);
 
     gl4duGenMatrix(GL_FLOAT, "modelViewMatrix");
     gl4duGenMatrix(GL_FLOAT, "projectionMatrix");

@@ -38,11 +38,19 @@ public:
     int GetSubMeshCount() const { return mSubMeshes.GetCount(); }
 
 private:
+    /*
     enum
     {
         VERTEX_VBO,
         NORMAL_VBO,
         UV_VBO,
+        INDEX_VBO,
+        VBO_COUNT,
+    };
+    */
+    enum
+    {
+        DATA_VBO,
         INDEX_VBO,
         VBO_COUNT,
     };
@@ -56,6 +64,7 @@ private:
         int TriangleCount;
     };
 
+    GLuint mVAO;
     GLuint mVBONames[VBO_COUNT];
     FbxArray<SubMesh*> mSubMeshes;
     bool mHasNormal;

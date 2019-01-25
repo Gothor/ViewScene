@@ -215,6 +215,7 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 
     if (lHasDeformation)
     {
+		printf("lHasDeformation true.\n");
         // Active vertex cache deformer will overwrite any other deformer
         if (lHasVertexCache)
         {
@@ -246,6 +247,13 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
             lMeshCache->UpdateVertexPosition(lMesh, lVertexArray);
     }
 
+	FbxVector4 min, max, center;
+    bool success = pNode->EvaluateGlobalBoundingBoxMinMaxCenter(min, max, center);
+    printf("success = %d\n", success);
+    printf("min = (%lf, %lf, %lf)\n", min[0], min[1], min[2]);
+    printf("max = (%lf, %lf, %lf)\n", max[0], max[1], max[2]);
+    printf("center = (%lf, %lf, %lf)\n", center[0], center[1], center[2]);
+
     // glPushMatrix();
     // glMultMatrixd((const double*)pGlobalPosition);
 	gl4duPushMatrix();
@@ -276,22 +284,26 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 	// 	gl4dgDraw(_quad);
 	// }
 
-	// { // 1
-	// 	gl4duBindMatrix("projectionMatrix");
-	// 	gl4duPushMatrix();
-	// 	gl4duLoadIdentityf();
-	// 	// gl4duPerspectivef(160, 800.0 / 600.0, 0.1, 1000);
-	// 	gl4duOrthof(-50, 50, -5, 60, 0.1, 100);
-	// 	gl4duBindMatrix("modelViewMatrix");
-	// 	gl4duPushMatrix();
-	// 	gl4duLoadIdentityf();
-	// 	gl4duRotatef(_time * 10, 0, 1, 0);
-	// 	gl4duTranslatef(0.0, 0.0, -8.0);
-	// 	gl4duTranslatef(-10.4292, 27.5297, 50.8574);
-	// 	gl4duScalef(0.5, 0.5, 0.5);
+	{ // 1
+		gl4duBindMatrix("projectionMatrix");
+		gl4duPushMatrix();
+		gl4duLoadIdentityf();
+		// gl4duPerspectivef(160, 800.0 / 600.0, 0.1, 1000);
+		// gl4duOrthof(-60, 60, 0, 170, -10, 40);
+		gl4duOrthof(-15, 15, 0, 20, -100, 40);
+		gl4duBindMatrix("modelViewMatrix");
+		gl4duPushMatrix();
+		gl4duLoadIdentityf();
+        gl4duTranslatef(0, 0, -10);
+		gl4duRotatef(_time * 10, 0, 1, 0);
+        /*
+		gl4duTranslatef(0.0, 0.0, -8.0);
+		gl4duTranslatef(-10.4292, 27.5297, 50.8574);
+		gl4duScalef(0.5, 0.5, 0.5);
+        */
 
-	// 	gl4duSendMatrices();
-	// }
+		gl4duSendMatrices();
+	}
 
     if (lMeshCache)
     {
@@ -338,12 +350,12 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
         }
     }
 
-	// { // 1
-	// 	gl4duBindMatrix("projectionMatrix");
-	// 	gl4duPopMatrix();
-	// 	gl4duBindMatrix("modelViewMatrix");
-	// 	gl4duPopMatrix();
-	// }
+	{ // 1
+		gl4duBindMatrix("projectionMatrix");
+		gl4duPopMatrix();
+		gl4duBindMatrix("modelViewMatrix");
+		gl4duPopMatrix();
+	}
 
     // glPopMatrix();
 	gl4duPopMatrix();

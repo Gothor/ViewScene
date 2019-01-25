@@ -12,6 +12,8 @@ this software in either electronic or hard copy form.
 #include "SceneCache.h"
 #include <iostream>
 
+extern GLuint _pId;
+
 namespace
 {
     const float ANGLE_TO_RADIAN = 3.1415926f / 180.f;
@@ -74,7 +76,7 @@ namespace
     }
 }
 
-VBOMesh::VBOMesh() : mHasNormal(false), mHasUV(false), mAllByControlPoint(true)
+VBOMesh::VBOMesh() : mHasNormal(false), mHasUV(false), mAllByControlPoint(true), mVAO(0)
 {
     // Reset every VBO to zero, which means no buffer.
     for (int lVBOIndex = 0; lVBOIndex < VBO_COUNT; ++lVBOIndex)
@@ -85,6 +87,8 @@ VBOMesh::VBOMesh() : mHasNormal(false), mHasUV(false), mAllByControlPoint(true)
 
 VBOMesh::~VBOMesh()
 {
+    glDeleteVertexArrays(1, &mVAO);
+
     // Delete VBO objects, zeros are ignored automatically.
     glDeleteBuffers(VBO_COUNT, mVBONames);
 	
@@ -326,31 +330,78 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
         mSubMeshes[lMaterialIndex]->TriangleCount += 1;
     }
 
+    float* lData = new float[lVertexCount * 8]();
+    for (int i = 0; i < lVertexCount; i++) {
+        lData[i * 8 + 0] = lVertices[i * 4 + 0];
+        lData[i * 8 + 1] = lVertices[i * 4 + 1];
+        lData[i * 8 + 2] = lVertices[i * 4 + 2];
+
+        if (mHasNormal) {
+            lData[i * 8 + 3] = lNormals[i * 3 + 0];
+            lData[i * 8 + 4] = lNormals[i * 3 + 1];
+            lData[i * 8 + 5] = lNormals[i * 3 + 2];
+        }
+
+        if (mHasUV) {
+            lData[i * 8 + 6] = lUVs[i * 2 + 0];
+            lData[i * 8 + 7] = lUVs[i * 2 + 1];
+        }
+    }
+
+	printf("lData => (%f, %f, %f)\n", lData[0], lData[1], lData[2]);
+	
+	printf("lVertexCount = %d\n", lVertexCount);
+
+    glGenVertexArrays(1, &mVAO);
+    glBindVertexArray(mVAO);
+
     // Create VBOs
     glGenBuffers(VBO_COUNT, mVBONames);
 
     // Save vertex attributes into GPU
-    glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-    glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * VERTEX_STRIDE * sizeof(float), lVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, mVBONames[DATA_VBO]);
+    glBufferData(GL_ARRAY_BUFFER, lVertexCount * 8 * sizeof(float), lData, GL_STATIC_DRAW);
     delete [] lVertices;
 
     if (mHasNormal)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
-        glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * NORMAL_STRIDE * sizeof(float), lNormals, GL_STATIC_DRAW);
         delete [] lNormals;
     }
     
     if (mHasUV)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, mVBONames[UV_VBO]);
-        glBufferData(GL_ARRAY_BUFFER, lPolygonVertexCount * UV_STRIDE * sizeof(float), lUVs, GL_STATIC_DRAW);
         delete [] lUVs;
     }
+
+    /*
+    int lVertexLoc = glGetAttribLocation(_pId, "vsiPosition");
+    int lNormalLoc = glGetAttribLocation(_pId, "vsiNormal");
+    int lUVLoc = glGetAttribLocation(_pId, "vsiUV");
+    printf("lVertexLoc = %d\n", lVertexLoc);
+    printf("lNormalLoc = %d\n", lNormalLoc);
+    printf("lUVLoc = %d\n", lUVLoc);
+    */
+    /*
+    glEnableVertexAttribArray(lVertexLoc);
+    glEnableVertexAttribArray(lNormalLoc);
+    glEnableVertexAttribArray(lUVLoc);
+    */
+    glUseProgram(_pId); 
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(3 * sizeof *lData));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(6 * sizeof *lData));
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, lPolygonCount * TRIANGLE_VERTEX_COUNT * sizeof(unsigned int), lIndices, GL_STATIC_DRAW);
+    delete [] lData;
     delete [] lIndices;
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     return true;
 }
@@ -394,12 +445,14 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
     }
 
     // Transfer into GPU.
+    /*
     if (lVertices)
     {
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
         glBufferData(GL_ARRAY_BUFFER, lVertexCount * VERTEX_STRIDE * sizeof(float), lVertices, GL_STATIC_DRAW);
         delete [] lVertices;
     }
+    */
 }
 
 extern GLuint _quad;
@@ -413,7 +466,7 @@ void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 #endif
 
     // {
-    //     std::cout << "Nb triangles: " << mSubMeshes[pMaterialIndex]->TriangleCount << std::endl;
+         // std::cout << "Nb triangles: " << mSubMeshes[pMaterialIndex]->TriangleCount << std::endl;
 
     //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
     //     GLuint id[3];
@@ -453,8 +506,6 @@ void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 #endif
 }
 
-extern GLuint _pId;
-
 void VBOMesh::BeginDraw(ShadingMode pShadingMode) const
 {
     // Push OpenGL attributes.
@@ -468,11 +519,6 @@ void VBOMesh::BeginDraw(ShadingMode pShadingMode) const
     // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
     // glVertexPointer(VERTEX_STRIDE, GL_FLOAT, 0, 0);
     // glEnableClientState(GL_VERTEX_ARRAY);
-    int lVertexLoc = glGetAttribLocation(_pId, "vsiPosition");
-    // std::cout << "lVertexLoc = " << lVertexLoc << std::endl;
-    glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-    glEnableVertexAttribArray(lVertexLoc);
-    glVertexAttribPointer(lVertexLoc, VERTEX_STRIDE, GL_FLOAT, GL_FALSE, 0, 0);
 
     // Set index array.
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
@@ -500,7 +546,7 @@ void VBOMesh::BeginDraw(ShadingMode pShadingMode) const
     // }
 
     // Set index array.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
 
     // if (pShadingMode == SHADING_MODE_SHADED)
     // {
@@ -514,17 +560,20 @@ void VBOMesh::BeginDraw(ShadingMode pShadingMode) const
     // {
     //     glColor4fv(WIREFRAME_COLOR);
     // }
+
+    glBindVertexArray(mVAO);
 }
 
 void VBOMesh::EndDraw() const
 {
-    glDisableVertexAttribArray(glGetAttribLocation(_pId, "vsiPosition"));
+    glBindVertexArray(0);
+    //glDisableVertexAttribArray(glGetAttribLocation(_pId, "vsiPosition"));
     // glDisableVertexAttribArray(glGetAttribLocation(_pId, "vsiNormal"));
 
     // Reset VBO binding.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Pop OpenGL attributes.
     // glPopAttrib();
