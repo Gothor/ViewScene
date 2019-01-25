@@ -90,5 +90,5 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -rf $(BINDIR)
-	rm -rf $(OBJDIR)
+	rm -rf $(OBJS)
 
