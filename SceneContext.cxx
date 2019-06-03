@@ -644,8 +644,10 @@ bool SceneContext::SetCurrentPoseIndex(int pPoseIndex)
 void SceneContext::OnTimerClick() const
 {
     // Loop in the animation stack if not paused.
+    printf("mStop: %lf\nmStart: %lf\n", mStop.GetSecondDouble(), mStart.GetSecondDouble());
     if (mStop > mStart && !mPause)
     {
+        printf("mStop > mStart && !mPause\n");
         // Set the scene status flag to refresh 
         // the scene in the next timer callback.
         mStatus = MUST_BE_REFRESHED;
@@ -661,6 +663,7 @@ void SceneContext::OnTimerClick() const
     // and on if the animation stack has no length.
     else
     {
+        printf("[NOT] mStop > mStart && !mPause\n");
         // Set the scene status flag to avoid refreshing 
         // the scene in the next timer callback.
         mStatus = REFRESHED;

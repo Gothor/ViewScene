@@ -41,6 +41,7 @@ this software in either electronic or hard copy form.
 #include <GL4D/gl4du.h>
 #include <GL4D/gl4dg.h>
 #include <GL4D/gl4duw_SDL2.h>
+#include <iostream>
 
 static void init(void);
 static void resize(int w, int h);
@@ -51,6 +52,7 @@ void ReshapeCallback(int pWidth, int pHeight);
 void KeyboardCallback(unsigned char pKey, int, int);
 void MouseCallback(int button, int state, int x, int y);
 void MotionCallback(int x, int y);
+void OnKeyUp(int code);
 
 SceneContext * gSceneContext;
 
@@ -177,6 +179,7 @@ int main(int argc, char** argv)
     // glutMotionFunc(MotionCallback);
     gl4duwResizeFunc(ReshapeCallback);
     gl4duwDisplayFunc(DisplayCallback);
+    gl4duwKeyUpFunc(OnKeyUp);
 
 	FbxString lFilePath("");
 	for( int i = 1, c = argc; i < c; ++i )
@@ -186,6 +189,7 @@ int main(int argc, char** argv)
 	}
 
 	gSceneContext = new SceneContext(!lFilePath.IsEmpty() ? lFilePath.Buffer() : NULL, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, lSupportVBO);
+    std::cout << "(main) : " << (gSceneContext->GetStatus() == SceneContext::Status::MUST_BE_LOADED) << std::endl;
 
 	// glutMainLoop();
     gl4duwMainLoop();
@@ -229,10 +233,10 @@ void ExitFunction()
 void TimerCallback(int)
 {
     // Ask to display the current frame only if necessary.
-    if (gSceneContext->GetStatus() == SceneContext::MUST_BE_REFRESHED)
-    {
+    // if (gSceneContext->GetStatus() == SceneContext::MUST_BE_REFRESHED)
+    // {
         // glutPostRedisplay();
-    }
+    // }
 
     gSceneContext->OnTimerClick();
 
@@ -240,15 +244,22 @@ void TimerCallback(int)
     // glutTimerFunc((unsigned int)gSceneContext->GetFrameTime().GetMilliSeconds(), TimerCallback, 0);
 }
 
+static int ct = 0;
 
 // Refresh the application window.
 void DisplayCallback()
 {
+    if (ct != 0) {
+        printf("Tik\n");
+        TimerCallback(0);
+    }
+    ct++;
     gSceneContext->OnDisplay();
 
     // glutSwapBuffers();
 
     // Import the scene if it's ready to load.
+    std::cout << "(DisplayCallback) : " << (gSceneContext->GetStatus() == SceneContext::Status::MUST_BE_LOADED) << std::endl;
     if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
     {
 
@@ -256,8 +267,24 @@ void DisplayCallback()
         // to make sure that the application window is opened and a 
         // status message is displayed before.
         gSceneContext->LoadFile();
-        // Call the timer to display the first frame.
-        // glutTimerFunc((unsigned int)gSceneContext->GetFrameTime().GetMilliSeconds(), TimerCallback, 0);
+        gSceneContext->SetCurrentAnimStack(0);
+        /*
+        const FbxArray<FbxPose *> & lPoseArray = gSceneContext->GetPoseArray();
+        std::cout << "Nombre de poses : " << lPoseArray.GetCount() << std::endl;
+        for (int lPoseIndex = 0; lPoseIndex < lPoseArray.GetCount(); ++lPoseIndex)
+        {
+            if (lPoseArray[lPoseIndex]->IsBindPose())
+            {
+                std::cout << lPoseArray[lPoseIndex]->GetName() << std::endl;
+            }
+        }
+        */
+        const FbxArray<FbxString *> & lAnimStackNameArray = gSceneContext->GetAnimStackNameArray();
+        std::cout << "Nombre de piles d'animation : " << lAnimStackNameArray.GetCount() << std::endl;
+        for (int lPoseIndex = 0; lPoseIndex < lAnimStackNameArray.GetCount(); ++lPoseIndex)
+        {
+            std::cout << "- " << lAnimStackNameArray[lPoseIndex]->Buffer() << std::endl;
+        }
     }
 
 	if( gAutoQuit ) exit(0);
@@ -293,6 +320,14 @@ void MotionCallback(int x, int y)
     gSceneContext->OnMouseMotion(x, y);
 }
 
+void OnKeyUp(int code) {
+    static int index = 0;
 
+    printf("HAHAHA ! (%d/%d) \n", index, gSceneContext->GetAnimStackNameArray().GetCount());
+    return;
+    gSceneContext->SetCurrentAnimStack(index);
+
+    index = (index + 1) % gSceneContext->GetAnimStackNameArray().GetCount();
+}
 
 

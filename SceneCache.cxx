@@ -25,7 +25,7 @@ namespace
     const int TRIANGLE_VERTEX_COUNT = 3;
 
     // Four floats for every position.
-    const int VERTEX_STRIDE = 4;
+    const int VERTEX_STRIDE = 3;
     // Three floats for every normal.
     const int NORMAL_STRIDE = 3;
     // Two floats for every UV.
@@ -245,7 +245,7 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
             lVertices[lIndex * VERTEX_STRIDE] = static_cast<float>(lCurrentVertex[0]);
             lVertices[lIndex * VERTEX_STRIDE + 1] = static_cast<float>(lCurrentVertex[1]);
             lVertices[lIndex * VERTEX_STRIDE + 2] = static_cast<float>(lCurrentVertex[2]);
-            lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
+            // lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
 
             // Save the normal.
             if (mHasNormal)
@@ -307,7 +307,7 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
                 lVertices[lVertexCount * VERTEX_STRIDE] = static_cast<float>(lCurrentVertex[0]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 1] = static_cast<float>(lCurrentVertex[1]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 2] = static_cast<float>(lCurrentVertex[2]);
-                lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
+                // lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
 
                 if (mHasNormal)
                 {
@@ -331,6 +331,10 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
     }
 
     float* lData = new float[lVertexCount * 8]();
+    std::copy(lVertices,    lVertices + lVertexCount * VERTEX_STRIDE,   lData);
+    std::copy(lNormals,     lNormals + lVertexCount * NORMAL_STRIDE,    lData + lVertexCount * VERTEX_STRIDE);
+    std::copy(lUVs,         lUVs + lVertexCount * UV_STRIDE,            lData + lVertexCount * (VERTEX_STRIDE + NORMAL_STRIDE));
+    /*
     for (int i = 0; i < lVertexCount; i++) {
         lData[i * 8 + 0] = lVertices[i * 4 + 0];
         lData[i * 8 + 1] = lVertices[i * 4 + 1];
@@ -347,6 +351,7 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
             lData[i * 8 + 7] = lUVs[i * 2 + 1];
         }
     }
+    */
 
 	printf("lData => (%f, %f, %f)\n", lData[0], lData[1], lData[2]);
 	
@@ -390,9 +395,14 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
+    /*
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(3 * sizeof *lData));
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(6 * sizeof *lData));
+    */
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (const void *)(lVertexCount * 3 * sizeof *lData));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(lVertexCount * 6 * sizeof *lData));
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, lPolygonCount * TRIANGLE_VERTEX_COUNT * sizeof(unsigned int), lIndices, GL_STATIC_DRAW);
@@ -408,11 +418,13 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
 
 void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVertices) const
 {
+    //return;
     // Convert to the same sequence with data in GPU.
     float * lVertices = NULL;
     int lVertexCount = 0;
     if (mAllByControlPoint)
     {
+        printf("AllByControlPoint\n");
         lVertexCount = pMesh->GetControlPointsCount();
         lVertices = new float[lVertexCount * VERTEX_STRIDE];
         for (int lIndex = 0; lIndex < lVertexCount; ++lIndex)
@@ -420,11 +432,12 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
             lVertices[lIndex * VERTEX_STRIDE] = static_cast<float>(pVertices[lIndex][0]);
             lVertices[lIndex * VERTEX_STRIDE + 1] = static_cast<float>(pVertices[lIndex][1]);
             lVertices[lIndex * VERTEX_STRIDE + 2] = static_cast<float>(pVertices[lIndex][2]);
-            lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
+            //lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
         }
     }
     else
     {
+        // printf("Not AllByControlPoint");
         const int lPolygonCount = pMesh->GetPolygonCount();
         lVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
         lVertices = new float[lVertexCount * VERTEX_STRIDE];
@@ -438,7 +451,7 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
                 lVertices[lVertexCount * VERTEX_STRIDE] = static_cast<float>(pVertices[lControlPointIndex][0]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 1] = static_cast<float>(pVertices[lControlPointIndex][1]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 2] = static_cast<float>(pVertices[lControlPointIndex][2]);
-                lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
+                //lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
                 ++lVertexCount;
             }
         }
@@ -453,6 +466,13 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
         delete [] lVertices;
     }
     */
+    if (lVertices)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, mVBONames[DATA_VBO]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, lVertexCount * VERTEX_STRIDE * sizeof(float), lVertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        delete [] lVertices;
+    }
 }
 
 extern GLuint _quad;

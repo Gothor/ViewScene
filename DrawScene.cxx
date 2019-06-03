@@ -215,7 +215,7 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 
     if (lHasDeformation)
     {
-		printf("lHasDeformation true.\n");
+		// printf("lHasDeformation true.\n");
         // Active vertex cache deformer will overwrite any other deformer
         if (lHasVertexCache)
         {
@@ -223,9 +223,12 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
         }
         else
         {
+			printf("NoVertexCache\n");
             if (lHasShape)
             {
+				printf("HasShape\n");
                 // Deform the vertex array with the shapes.
+				printf("pTime: %d\n", pTime);
                 ComputeShapeDeformation(lMesh, pTime, pAnimLayer, lVertexArray);
             }
 
@@ -239,20 +242,22 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
             if (lClusterCount)
             {
                 // Deform the vertex array with the skin deformer.
+				printf("ClusterCount\n");
                 ComputeSkinDeformation(pGlobalPosition, lMesh, pTime, lVertexArray, pPose);
             }
         }
 
-        if (lMeshCache)
+        if (lMeshCache) {
             lMeshCache->UpdateVertexPosition(lMesh, lVertexArray);
+		}
     }
 
 	FbxVector4 min, max, center;
     bool success = pNode->EvaluateGlobalBoundingBoxMinMaxCenter(min, max, center);
-    printf("success = %d\n", success);
-    printf("min = (%lf, %lf, %lf)\n", min[0], min[1], min[2]);
-    printf("max = (%lf, %lf, %lf)\n", max[0], max[1], max[2]);
-    printf("center = (%lf, %lf, %lf)\n", center[0], center[1], center[2]);
+    // printf("success = %d\n", success);
+    // printf("min = (%lf, %lf, %lf)\n", min[0], min[1], min[2]);
+    // printf("max = (%lf, %lf, %lf)\n", max[0], max[1], max[2]);
+    // printf("center = (%lf, %lf, %lf)\n", center[0], center[1], center[2]);
 
     // glPushMatrix();
     // glMultMatrixd((const double*)pGlobalPosition);
@@ -295,7 +300,8 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 		gl4duPushMatrix();
 		gl4duLoadIdentityf();
         gl4duTranslatef(0, 0, -10);
-		gl4duRotatef(_time * 10, 0, 1, 0);
+		// gl4duRotatef(_time * 10, 0, 1, 0);
+		gl4duRotatef(90, 1, 0, 0);
         /*
 		gl4duTranslatef(0.0, 0.0, -8.0);
 		gl4duTranslatef(-10.4292, 27.5297, 50.8574);
@@ -307,6 +313,7 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 
     if (lMeshCache)
     {
+		printf("prout\n");
         lMeshCache->BeginDraw(pShadingMode);
         const int lSubMeshCount = lMeshCache->GetSubMeshCount();
         for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex)
