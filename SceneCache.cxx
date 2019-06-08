@@ -334,28 +334,6 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
     std::copy(lVertices,    lVertices + lVertexCount * VERTEX_STRIDE,   lData);
     std::copy(lNormals,     lNormals + lVertexCount * NORMAL_STRIDE,    lData + lVertexCount * VERTEX_STRIDE);
     std::copy(lUVs,         lUVs + lVertexCount * UV_STRIDE,            lData + lVertexCount * (VERTEX_STRIDE + NORMAL_STRIDE));
-    /*
-    for (int i = 0; i < lVertexCount; i++) {
-        lData[i * 8 + 0] = lVertices[i * 4 + 0];
-        lData[i * 8 + 1] = lVertices[i * 4 + 1];
-        lData[i * 8 + 2] = lVertices[i * 4 + 2];
-
-        if (mHasNormal) {
-            lData[i * 8 + 3] = lNormals[i * 3 + 0];
-            lData[i * 8 + 4] = lNormals[i * 3 + 1];
-            lData[i * 8 + 5] = lNormals[i * 3 + 2];
-        }
-
-        if (mHasUV) {
-            lData[i * 8 + 6] = lUVs[i * 2 + 0];
-            lData[i * 8 + 7] = lUVs[i * 2 + 1];
-        }
-    }
-    */
-
-	printf("lData => (%f, %f, %f)\n", lData[0], lData[1], lData[2]);
-	
-	printf("lVertexCount = %d\n", lVertexCount);
 
     glGenVertexArrays(1, &mVAO);
     glBindVertexArray(mVAO);
@@ -378,28 +356,10 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
         delete [] lUVs;
     }
 
-    /*
-    int lVertexLoc = glGetAttribLocation(_pId, "vsiPosition");
-    int lNormalLoc = glGetAttribLocation(_pId, "vsiNormal");
-    int lUVLoc = glGetAttribLocation(_pId, "vsiUV");
-    printf("lVertexLoc = %d\n", lVertexLoc);
-    printf("lNormalLoc = %d\n", lNormalLoc);
-    printf("lUVLoc = %d\n", lUVLoc);
-    */
-    /*
-    glEnableVertexAttribArray(lVertexLoc);
-    glEnableVertexAttribArray(lNormalLoc);
-    glEnableVertexAttribArray(lUVLoc);
-    */
     glUseProgram(_pId); 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
-    /*
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(3 * sizeof *lData));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof *lData, (const void *)(6 * sizeof *lData));
-    */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (const void *)(lVertexCount * 3 * sizeof *lData));
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(lVertexCount * 6 * sizeof *lData));
@@ -418,13 +378,11 @@ bool VBOMesh::Initialize(const FbxMesh *pMesh)
 
 void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVertices) const
 {
-    //return;
     // Convert to the same sequence with data in GPU.
     float * lVertices = NULL;
     int lVertexCount = 0;
     if (mAllByControlPoint)
     {
-        printf("AllByControlPoint\n");
         lVertexCount = pMesh->GetControlPointsCount();
         lVertices = new float[lVertexCount * VERTEX_STRIDE];
         for (int lIndex = 0; lIndex < lVertexCount; ++lIndex)
@@ -432,12 +390,10 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
             lVertices[lIndex * VERTEX_STRIDE] = static_cast<float>(pVertices[lIndex][0]);
             lVertices[lIndex * VERTEX_STRIDE + 1] = static_cast<float>(pVertices[lIndex][1]);
             lVertices[lIndex * VERTEX_STRIDE + 2] = static_cast<float>(pVertices[lIndex][2]);
-            //lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
         }
     }
     else
     {
-        // printf("Not AllByControlPoint");
         const int lPolygonCount = pMesh->GetPolygonCount();
         lVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
         lVertices = new float[lVertexCount * VERTEX_STRIDE];
@@ -451,21 +407,12 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
                 lVertices[lVertexCount * VERTEX_STRIDE] = static_cast<float>(pVertices[lControlPointIndex][0]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 1] = static_cast<float>(pVertices[lControlPointIndex][1]);
                 lVertices[lVertexCount * VERTEX_STRIDE + 2] = static_cast<float>(pVertices[lControlPointIndex][2]);
-                //lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
                 ++lVertexCount;
             }
         }
     }
 
     // Transfer into GPU.
-    /*
-    if (lVertices)
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-        glBufferData(GL_ARRAY_BUFFER, lVertexCount * VERTEX_STRIDE * sizeof(float), lVertices, GL_STATIC_DRAW);
-        delete [] lVertices;
-    }
-    */
     if (lVertices)
     {
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[DATA_VBO]);
@@ -475,9 +422,6 @@ void VBOMesh::UpdateVertexPosition(const FbxMesh * pMesh, const FbxVector4 * pVe
     }
 }
 
-extern GLuint _quad;
-static int _counter = 0;
-
 void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 {
 #if _MSC_VER >= 1900 && defined(_WIN64)
@@ -486,33 +430,11 @@ void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 	#pragma warning( disable : 4312)
 #endif
 
-    // {
-        // std::cout << "(" << _counter << ") Nb triangles: " << mSubMeshes[pMaterialIndex]->TriangleCount << std::endl;
-
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-        // GLuint id[3];
-        // glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, _counter * 3 * sizeof(GLuint), 3 * sizeof(GLuint), id);
-        
-        // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-        // GLfloat data[12];
-        // glGetBufferSubData(GL_ARRAY_BUFFER, id[0] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), data);
-        // glGetBufferSubData(GL_ARRAY_BUFFER, id[1] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE]);
-        // glGetBufferSubData(GL_ARRAY_BUFFER, id[2] * VERTEX_STRIDE * sizeof(GLfloat), VERTEX_STRIDE * sizeof(GLfloat), &data[VERTEX_STRIDE * 2]);
-        // std::cout << "(" << data[0] << ", " << data[1] << ", " << data[2] << ", " << data[3] << ")"
-             // << ", (" << data[4] << ", " << data[5] << ", " << data[6] << ", " << data[7] << ")"
-             // << ", (" << data[8] << ", " << data[9] << ", " << data[10] << ", " << data[11] << ")" << std::endl;
-             
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-
-        // _counter++;
-    // }
-
     // Where to start.
     GLsizei lOffset = mSubMeshes[pMaterialIndex]->IndexOffset * sizeof(unsigned int);
     if ( pShadingMode == SHADING_MODE_SHADED)
     {
         const GLsizei lElementCount = mSubMeshes[pMaterialIndex]->TriangleCount * 3;
-        // std::cout << "Drawing triangles..." << std::endl;
         glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
     }
     else
@@ -531,79 +453,12 @@ void VBOMesh::Draw(int pMaterialIndex, ShadingMode pShadingMode) const
 
 void VBOMesh::BeginDraw(ShadingMode pShadingMode) const
 {
-    // Push OpenGL attributes.
-    // glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
-    // glPushAttrib(GL_ENABLE_BIT);
-    // glPushAttrib(GL_CURRENT_BIT);
-    // glPushAttrib(GL_LIGHTING_BIT);
-    // glPushAttrib(GL_TEXTURE_BIT);
-
-    // Set vertex position array.
-    // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-    // glVertexPointer(VERTEX_STRIDE, GL_FLOAT, 0, 0);
-    // glEnableClientState(GL_VERTEX_ARRAY);
-
-    // Set index array.
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-
-    // Set normal array.
-    // if (mHasNormal && pShadingMode == SHADING_MODE_SHADED)
-    // {
-        // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
-        // glNormalPointer(GL_FLOAT, 0, 0);
-        // glEnableClientState(GL_NORMAL_ARRAY);
-
-        // int lNormalLoc = glGetAttribLocation(_pId, "vsiNormal");
-        // std::cout << "lNormalLoc = " << lNormalLoc << std::endl;
-        // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
-        // glEnableVertexAttribArray(lNormalLoc);
-        // glVertexAttribPointer(lNormalLoc, NORMAL_STRIDE, GL_FLOAT, GL_FALSE, 0, 0);
-    // }
-    
-    // Set UV array.
-    // if (mHasUV && pShadingMode == SHADING_MODE_SHADED)
-    // {
-        // glBindBuffer(GL_ARRAY_BUFFER, mVBONames[UV_VBO]);
-        // glTexCoordPointer(UV_STRIDE, GL_FLOAT, 0, 0);
-        // glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    // }
-
-    // Set index array.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
-
-    // if (pShadingMode == SHADING_MODE_SHADED)
-    // {
-    //     glEnable(GL_LIGHTING);
-
-    //     glEnable(GL_TEXTURE_2D);
-
-    //     glEnable(GL_NORMALIZE);
-    // }
-    // else
-    // {
-    //     glColor4fv(WIREFRAME_COLOR);
-    // }
-
     glBindVertexArray(mVAO);
 }
 
 void VBOMesh::EndDraw() const
 {
     glBindVertexArray(0);
-    //glDisableVertexAttribArray(glGetAttribLocation(_pId, "vsiPosition"));
-    // glDisableVertexAttribArray(glGetAttribLocation(_pId, "vsiNormal"));
-
-    // Reset VBO binding.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Pop OpenGL attributes.
-    // glPopAttrib();
-    // glPopAttrib();
-    // glPopAttrib();
-    // glPopAttrib();
-    // glPopClientAttrib();
 }
 
 MaterialCache::MaterialCache() : mShinness(0)

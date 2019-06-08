@@ -12,7 +12,7 @@ void main(void) {
   color = vec4(1.0, 1.0, 1.0, 1.0);
   vec3 N = normalize(vsoNormal);
   // vec3 L = normalize(vsoModPos - lumPos.xyz);
-  vec3 L = vec3(-1, 1, -1);
+  vec3 L = vec3(-1, -1, -1);
   diffuse = dot(N, -L);
 	/*
   if(specular != 0) {

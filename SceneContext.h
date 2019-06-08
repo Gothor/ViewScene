@@ -73,6 +73,7 @@ public:
     void SetSelectedNode(FbxNode * pSelectedNode);
     // Set the shading mode, wire-frame or shaded.
     void SetShadingMode(ShadingMode pMode);
+    void SetCurrentAnimation(int index, bool reverse = false);
 
     // Pause the animation.
     void SetPause(bool pPause) { mPause = pPause; }
@@ -136,6 +137,9 @@ private:
     int mWindowWidth, mWindowHeight;
     // Utility class for draw text in OpenGL.
     DrawText * mDrawText;
+
+    int mCurrentAnimation;
+    bool mReverseAnimation;
 };
 
 // Initialize GLEW, must be called after the window is created.

@@ -38,15 +38,17 @@ this software in either electronic or hard copy form.
 /////////////////////////////////////////////////////////////////////////
 
 #include "SceneContext.h"
+#include "TextToAnim.h"
 #include <GL4D/gl4du.h>
 #include <GL4D/gl4dg.h>
 #include <GL4D/gl4duw_SDL2.h>
 #include <iostream>
+#include <chrono>
 
 static void init(void);
 static void resize(int w, int h);
 void ExitFunction();
-void TimerCallback(int);
+void TimerCallback();
 void DisplayCallback();
 void ReshapeCallback(int pWidth, int pHeight);
 void KeyboardCallback(unsigned char pKey, int, int);
@@ -82,7 +84,6 @@ const int DEFAULT_WINDOW_WIDTH = 720;
 const int DEFAULT_WINDOW_HEIGHT = 486;
 
 GLuint _pId = 0;
-GLuint _quad = 0;
 
 class MyMemoryAllocator
 {
@@ -144,9 +145,18 @@ public:
 };
 
 static bool gAutoQuit = false;
+const char* text = "m'o͡Uha͡I st'at͡Su:z g,o͡U b'ad";
+animation_bit_t* bits;
 
 int main(int argc, char** argv)
 {
+    int i;
+
+    bits = getAnimationBits("k'0mEnt v'A: b'0rIs", 20, 1094.0);
+    for (i = 0; bits[i].type != END; i++) {
+        printf("(%d) %s : %lfs\n", bits[i].type, bits[i].reversed ? "true" : "false", bits[i].duration);
+    }
+
     // Set exit function to destroy objects created by the FBX SDK.
     atexit(ExitFunction);
 
@@ -177,6 +187,7 @@ int main(int argc, char** argv)
     // glutKeyboardFunc(KeyboardCallback);
     // glutMouseFunc(MouseCallback);
     // glutMotionFunc(MotionCallback);
+    gl4duwIdleFunc(TimerCallback);
     gl4duwResizeFunc(ReshapeCallback);
     gl4duwDisplayFunc(DisplayCallback);
     gl4duwKeyUpFunc(OnKeyUp);
@@ -189,9 +200,7 @@ int main(int argc, char** argv)
 	}
 
 	gSceneContext = new SceneContext(!lFilePath.IsEmpty() ? lFilePath.Buffer() : NULL, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, lSupportVBO);
-    std::cout << "(main) : " << (gSceneContext->GetStatus() == SceneContext::Status::MUST_BE_LOADED) << std::endl;
 
-	// glutMainLoop();
     gl4duwMainLoop();
 
     return 0;
@@ -210,8 +219,6 @@ static void init(void)
     gl4duFrustumf(-0.5, 0.5, -0.5, 0.5, 1, 1000);
     gl4duBindMatrix("modelViewMatrix");
 
-    _quad = gl4dgGenQuadf();
-
     resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
 }
 
@@ -226,40 +233,44 @@ static void resize(int w, int h)
 void ExitFunction()
 {
     delete gSceneContext;
+    free(bits);
 }
 
+int animIndex = -1;
+std::chrono::steady_clock::time_point timer;
 
 // Trigger the display of the current frame.
-void TimerCallback(int)
+void TimerCallback()
 {
-    // Ask to display the current frame only if necessary.
-    // if (gSceneContext->GetStatus() == SceneContext::MUST_BE_REFRESHED)
-    // {
-        // glutPostRedisplay();
-    // }
+    std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
+    double diff = (std::chrono::duration_cast<std::chrono::duration<double>> (time - timer)).count() * 1000;
+
+    // printf("diff : %lf\n", diff);
+
+    if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
+        return;
+
+    if (animIndex == -1 || diff >= 1000.0) {
+        animIndex++;
+        printf("NEW ANIMATION : (%d) %s : %lfs\n", bits[animIndex].type, bits[animIndex].reversed ? "true" : "false", bits[animIndex].duration);
+        if (bits[animIndex].type == END) {
+            exit(0);
+        }
+        gSceneContext->SetCurrentAnimation(bits[animIndex].type, bits[animIndex].reversed);
+        timer = time;
+    }
 
     gSceneContext->OnTimerClick();
-
-    // Call the timer to display the next frame.
-    // glutTimerFunc((unsigned int)gSceneContext->GetFrameTime().GetMilliSeconds(), TimerCallback, 0);
 }
-
-static int ct = 0;
 
 // Refresh the application window.
 void DisplayCallback()
 {
-    if (ct != 0) {
-        printf("Tik\n");
-        TimerCallback(0);
-    }
-    ct++;
     gSceneContext->OnDisplay();
 
     // glutSwapBuffers();
 
     // Import the scene if it's ready to load.
-    std::cout << "(DisplayCallback) : " << (gSceneContext->GetStatus() == SceneContext::Status::MUST_BE_LOADED) << std::endl;
     if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
     {
 
@@ -268,23 +279,6 @@ void DisplayCallback()
         // status message is displayed before.
         gSceneContext->LoadFile();
         gSceneContext->SetCurrentAnimStack(0);
-        /*
-        const FbxArray<FbxPose *> & lPoseArray = gSceneContext->GetPoseArray();
-        std::cout << "Nombre de poses : " << lPoseArray.GetCount() << std::endl;
-        for (int lPoseIndex = 0; lPoseIndex < lPoseArray.GetCount(); ++lPoseIndex)
-        {
-            if (lPoseArray[lPoseIndex]->IsBindPose())
-            {
-                std::cout << lPoseArray[lPoseIndex]->GetName() << std::endl;
-            }
-        }
-        */
-        const FbxArray<FbxString *> & lAnimStackNameArray = gSceneContext->GetAnimStackNameArray();
-        std::cout << "Nombre de piles d'animation : " << lAnimStackNameArray.GetCount() << std::endl;
-        for (int lPoseIndex = 0; lPoseIndex < lAnimStackNameArray.GetCount(); ++lPoseIndex)
-        {
-            std::cout << "- " << lAnimStackNameArray[lPoseIndex]->Buffer() << std::endl;
-        }
     }
 
 	if( gAutoQuit ) exit(0);
@@ -321,13 +315,4 @@ void MotionCallback(int x, int y)
 }
 
 void OnKeyUp(int code) {
-    static int index = 0;
-
-    printf("HAHAHA ! (%d/%d) \n", index, gSceneContext->GetAnimStackNameArray().GetCount());
-    return;
-    gSceneContext->SetCurrentAnimStack(index);
-
-    index = (index + 1) % gSceneContext->GetAnimStackNameArray().GetCount();
 }
-
-

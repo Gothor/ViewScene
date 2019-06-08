@@ -35,6 +35,7 @@ INCDIR      = /mnt/d/Rodolphe/Ubuntu/FBX/include
 TARGET      = $(BINDIR)/$(EXAMPLE)
 OBJS  = \
 	./Common.o\
+	./TextToAnim.o\
 	./DrawScene.o\
 	./DrawText.o\
 	./GetPosition.o\

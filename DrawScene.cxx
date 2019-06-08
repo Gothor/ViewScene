@@ -181,9 +181,6 @@ void DrawSkeleton(FbxNode* pNode, FbxAMatrix& pParentGlobalPosition, FbxAMatrix&
     }
 }
 
-extern GLuint _quad;
-extern GLfloat _time;
-
 // Draw the vertices of a mesh.
 void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
               FbxAMatrix& pGlobalPosition, FbxPose* pPose, ShadingMode pShadingMode)
@@ -215,7 +212,6 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 
     if (lHasDeformation)
     {
-		// printf("lHasDeformation true.\n");
         // Active vertex cache deformer will overwrite any other deformer
         if (lHasVertexCache)
         {
@@ -223,12 +219,9 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
         }
         else
         {
-			printf("NoVertexCache\n");
             if (lHasShape)
             {
-				printf("HasShape\n");
                 // Deform the vertex array with the shapes.
-				printf("pTime: %d\n", pTime);
                 ComputeShapeDeformation(lMesh, pTime, pAnimLayer, lVertexArray);
             }
 
@@ -242,7 +235,6 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
             if (lClusterCount)
             {
                 // Deform the vertex array with the skin deformer.
-				printf("ClusterCount\n");
                 ComputeSkinDeformation(pGlobalPosition, lMesh, pTime, lVertexArray, pPose);
             }
         }
@@ -254,66 +246,28 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 
 	FbxVector4 min, max, center;
     bool success = pNode->EvaluateGlobalBoundingBoxMinMaxCenter(min, max, center);
-    // printf("success = %d\n", success);
-    // printf("min = (%lf, %lf, %lf)\n", min[0], min[1], min[2]);
-    // printf("max = (%lf, %lf, %lf)\n", max[0], max[1], max[2]);
-    // printf("center = (%lf, %lf, %lf)\n", center[0], center[1], center[2]);
 
-    // glPushMatrix();
-    // glMultMatrixd((const double*)pGlobalPosition);
 	gl4duPushMatrix();
 	gl4duMultMatrixd((const double*)pGlobalPosition);
     gl4duSendMatrices();
 	
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	// {
-	// 	gl4duBindMatrix("projectionMatrix");
-	// 	gl4duPushMatrix();
-	// 	gl4duLoadIdentityf();
-	// 	gl4duPerspectivef(160, 800.0 / 600.0, 0.1, 1000);
-	// 	gl4duBindMatrix("modelViewMatrix");
-	// 	gl4duPushMatrix();
-	// 	gl4duLoadIdentityf();
-	// 	gl4duRotatef(_time * 10, 0, 1, 0);
-	// 	gl4duTranslatef(0.0, 0.0, -10.0);
-	// 	gl4duScalef(2, 2, 2);
-
-	// 	gl4duSendMatrices();
-
-	// 	gl4duBindMatrix("projectionMatrix");
-	// 	gl4duPopMatrix();
-	// 	gl4duBindMatrix("modelViewMatrix");
-	// 	gl4duPopMatrix();
-		
-	// 	gl4dgDraw(_quad);
-	// }
-
 	{ // 1
 		gl4duBindMatrix("projectionMatrix");
 		gl4duPushMatrix();
 		gl4duLoadIdentityf();
-		// gl4duPerspectivef(160, 800.0 / 600.0, 0.1, 1000);
-		// gl4duOrthof(-60, 60, 0, 170, -10, 40);
 		gl4duOrthof(-15, 15, 0, 20, -100, 40);
 		gl4duBindMatrix("modelViewMatrix");
 		gl4duPushMatrix();
 		gl4duLoadIdentityf();
         gl4duTranslatef(0, 0, -10);
-		// gl4duRotatef(_time * 10, 0, 1, 0);
-		gl4duRotatef(90, 1, 0, 0);
-        /*
-		gl4duTranslatef(0.0, 0.0, -8.0);
-		gl4duTranslatef(-10.4292, 27.5297, 50.8574);
-		gl4duScalef(0.5, 0.5, 0.5);
-        */
 
 		gl4duSendMatrices();
 	}
 
     if (lMeshCache)
     {
-		printf("prout\n");
         lMeshCache->BeginDraw(pShadingMode);
         const int lSubMeshCount = lMeshCache->GetSubMeshCount();
         for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex)

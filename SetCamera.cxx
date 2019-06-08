@@ -284,33 +284,14 @@ void SetCamera(FbxScene* pScene,
 
         GlSetCameraPerspective( lFieldOfViewY, lAspectRatio, lNearPlane, lFarPlane, lEye, lCenter, lUp, lFilmOffsetX, lFilmOffsetY);
 
-
-
-    //glMatrixMode(GL_PROJECTION);
-    //double lTestPerpMatrix[ 16];
-    //glGetDoublev( GL_PROJECTION_MATRIX, lTestPerpMatrix);
-
-    //lTestPerpMatrix[ 8] -= lFilmOffsetX;
-    //lTestPerpMatrix[ 9] -= lFilmOffsetY;
-    //
-    //glLoadMatrixd( lTestPerpMatrix);
-    //glMatrixMode(GL_MODELVIEW);
         gl4duBindMatrix("projectionMatrix");
         float* lTestPerpMatrix;
         lTestPerpMatrix = (float*) gl4duGetMatrixData();
         lTestPerpMatrix[8] -= lFilmOffsetX;
         lTestPerpMatrix[9] -= lFilmOffsetY;
-        // std::cout << "(";
-        // for (int i = 0; i < 16; i++) {
-        //     if (i % 4 == 0) 
-        //         std::cout << std::endl << "\t";
-        //     std::cout << lTestPerpMatrix[i] << ", ";
-        // }
-        // std::cout << std::endl << ")" << std::endl;
         gl4duBindMatrix("modelViewMatrix");
 
         glViewport( lViewPortPosX, lViewPortPosY, lViewPortSizeX, lViewPortSizeY);
-        // std::cout << "(" << lViewPortPosX << ", " << lViewPortPosY << ", " << lViewPortSizeX << ", " << lViewPortSizeY << ")" << std::endl;
 
     }
     // Get the relevant camera settings for an orthogonal view.

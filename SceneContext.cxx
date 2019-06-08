@@ -412,7 +412,7 @@ SceneContext::SceneContext(const char * pFileName, int pWindowWidth, int pWindow
 mSdkManager(NULL), mScene(NULL), mImporter(NULL), mCurrentAnimLayer(NULL), mSelectedNode(NULL),
 mPoseIndex(-1), mCameraStatus(CAMERA_NOTHING), mPause(false), mShadingMode(SHADING_MODE_SHADED),
 mSupportVBO(pSupportVBO), mCameraZoomMode(ZOOM_FOCAL_LENGTH),
-mWindowWidth(pWindowWidth), mWindowHeight(pWindowHeight), mDrawText(new DrawText)
+mWindowWidth(pWindowWidth), mWindowHeight(pWindowHeight), mDrawText(new DrawText), mCurrentAnimation(0)
 {
     if (mFileName == NULL)
         mFileName = SAMPLE_FILENAME;
@@ -641,13 +641,14 @@ bool SceneContext::SetCurrentPoseIndex(int pPoseIndex)
     return true;
 }
 
+/*
 void SceneContext::OnTimerClick() const
 {
     // Loop in the animation stack if not paused.
     printf("mStop: %lf\nmStart: %lf\n", mStop.GetSecondDouble(), mStart.GetSecondDouble());
     if (mStop > mStart && !mPause)
     {
-        printf("mStop > mStart && !mPause\n");
+        // printf("mStop > mStart && !mPause\n");
         // Set the scene status flag to refresh 
         // the scene in the next timer callback.
         mStatus = MUST_BE_REFRESHED;
@@ -669,14 +670,84 @@ void SceneContext::OnTimerClick() const
         mStatus = REFRESHED;
     }
 }
+*/
+
+
+void SceneContext::OnTimerClick() const
+{
+    // Loop in the animation stack if not paused.
+    if (mStop > mStart && !mPause)
+    {
+        // Set the scene status flag to refresh 
+        // the scene in the next timer callback.
+        mStatus = MUST_BE_REFRESHED;
+        
+        FbxTime lSecondTime(0);
+        lSecondTime.SetTime(0,0,1,0,0);
+
+        FbxTime lStart = lSecondTime * mCurrentAnimation;
+        if (lStart < mStart) {
+            lStart = mStart;
+        }
+        else {
+            lStart += mFrameTime;
+        }
+        FbxTime lStop = lSecondTime * (mCurrentAnimation + 1);
+
+        if (!mReverseAnimation) {
+            mCurrentTime += mFrameTime;
+            
+            if (mCurrentTime >= lStop) {
+                //mCurrentTime = lStart; // To loop
+                mCurrentTime = lStop;
+            }
+        } else {
+            mCurrentTime -= mFrameTime;
+
+            if (mCurrentTime <= lStart) {
+                mCurrentTime = lStart;
+            }
+        }
+
+    }
+    // Avoid displaying the same frame on 
+    // and on if the animation stack has no length.
+    else
+    {
+        // Set the scene status flag to avoid refreshing 
+        // the scene in the next timer callback.
+        mStatus = REFRESHED;
+    }
+}
+
+void SceneContext::SetCurrentAnimation(int index, bool reverse) {
+    FbxTime lSecondTime(0);
+    lSecondTime.SetTime(0,0,1,0,0);
+    
+    mCurrentAnimation = index;
+    mReverseAnimation = reverse;
+
+    FbxTime lStart = lSecondTime * mCurrentAnimation;
+    if (lStart < mStart) {
+        lStart = mStart;
+    }
+    else {
+        lStart += mFrameTime;
+    }
+    FbxTime lStop = lSecondTime * (mCurrentAnimation + 1);
+
+    if (!mReverseAnimation) {
+        mCurrentTime = lStart;
+    } else {
+        mCurrentTime = lStop;
+    }
+}
 
 extern GLuint _pId;
-GLfloat _time = 0.0;
 
 // Redraw the scene
 bool SceneContext::OnDisplay()
 {
-    _time += 0.05;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(_pId);
