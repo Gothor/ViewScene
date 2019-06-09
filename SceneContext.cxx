@@ -721,6 +721,10 @@ void SceneContext::OnTimerClick() const
 void SceneContext::SetAnimationProgression(double percent) {
     mStatus = MUST_BE_REFRESHED;
 
+    if (mReverseAnimation) {
+        percent = 1. - percent;
+    }
+
     mCurrentTime = mSecondTime * mCurrentAnimation;
     if (mCurrentTime < mStart) {
         mCurrentTime = mStart;
