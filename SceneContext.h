@@ -74,6 +74,7 @@ public:
     // Set the shading mode, wire-frame or shaded.
     void SetShadingMode(ShadingMode pMode);
     void SetCurrentAnimation(int index, bool reverse = false);
+    void SetAnimationProgression(double percent);
 
     // Pause the animation.
     void SetPause(bool pPause) { mPause = pPause; }
@@ -118,7 +119,7 @@ private:
     FbxArray<FbxNode*> mCameraArray;
     FbxArray<FbxPose*> mPoseArray;
 
-    mutable FbxTime mFrameTime, mStart, mStop, mCurrentTime;
+    mutable FbxTime mFrameTime, mSecondTime, mStart, mStop, mCurrentTime;
 	mutable FbxTime mCache_Start, mCache_Stop;
 
     // Data for camera manipulation

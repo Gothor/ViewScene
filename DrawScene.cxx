@@ -257,7 +257,8 @@ void DrawMesh(FbxNode* pNode, FbxTime& pTime, FbxAnimLayer* pAnimLayer,
 		gl4duBindMatrix("projectionMatrix");
 		gl4duPushMatrix();
 		gl4duLoadIdentityf();
-		gl4duOrthof(-15, 15, 0, 20, -100, 40);
+		// gl4duOrthof(-15, 15, 0, 20, -100, 40);
+		gl4duOrthof(-3.75, 3.75, 15, 20, -100, 40);
 		gl4duBindMatrix("modelViewMatrix");
 		gl4duPushMatrix();
 		gl4duLoadIdentityf();

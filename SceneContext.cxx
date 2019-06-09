@@ -538,6 +538,7 @@ bool SceneContext::LoadFile()
 
             // Initialize the frame period.
             mFrameTime.SetTime(0, 0, 0, 1, 0, mScene->GetGlobalSettings().GetTimeMode());
+            mSecondTime.SetTime(0, 0, 1, 0, 0, mScene->GetGlobalSettings().GetTimeMode());
 
             // Print the keyboard shortcuts.
             FBXSDK_printf("Play/Pause Animation: Space Bar.\n");
@@ -681,18 +682,15 @@ void SceneContext::OnTimerClick() const
         // Set the scene status flag to refresh 
         // the scene in the next timer callback.
         mStatus = MUST_BE_REFRESHED;
-        
-        FbxTime lSecondTime(0);
-        lSecondTime.SetTime(0,0,1,0,0);
 
-        FbxTime lStart = lSecondTime * mCurrentAnimation;
+        FbxTime lStart = mSecondTime * mCurrentAnimation;
         if (lStart < mStart) {
             lStart = mStart;
         }
         else {
             lStart += mFrameTime;
         }
-        FbxTime lStop = lSecondTime * (mCurrentAnimation + 1);
+        FbxTime lStop = mSecondTime * (mCurrentAnimation + 1);
 
         if (!mReverseAnimation) {
             mCurrentTime += mFrameTime;
@@ -720,21 +718,32 @@ void SceneContext::OnTimerClick() const
     }
 }
 
+void SceneContext::SetAnimationProgression(double percent) {
+    mStatus = MUST_BE_REFRESHED;
+
+    mCurrentTime = mSecondTime * mCurrentAnimation;
+    if (mCurrentTime < mStart) {
+        mCurrentTime = mStart;
+    }
+    else {
+        mCurrentTime += mFrameTime;
+    }
+
+    mCurrentTime += mFrameTime * (percent * 24.);
+}
+
 void SceneContext::SetCurrentAnimation(int index, bool reverse) {
-    FbxTime lSecondTime(0);
-    lSecondTime.SetTime(0,0,1,0,0);
-    
     mCurrentAnimation = index;
     mReverseAnimation = reverse;
 
-    FbxTime lStart = lSecondTime * mCurrentAnimation;
+    FbxTime lStart = mSecondTime * mCurrentAnimation;
     if (lStart < mStart) {
         lStart = mStart;
     }
     else {
         lStart += mFrameTime;
     }
-    FbxTime lStop = lSecondTime * (mCurrentAnimation + 1);
+    FbxTime lStop = mSecondTime * (mCurrentAnimation + 1);
 
     if (!mReverseAnimation) {
         mCurrentTime = lStart;

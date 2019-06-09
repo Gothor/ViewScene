@@ -242,6 +242,10 @@ std::chrono::steady_clock::time_point timer;
 // Trigger the display of the current frame.
 void TimerCallback()
 {
+    if (animIndex == -1) {
+        timer = std::chrono::steady_clock::now();
+    }
+
     std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
     double diff = (std::chrono::duration_cast<std::chrono::duration<double>> (time - timer)).count() * 1000;
 
@@ -250,17 +254,33 @@ void TimerCallback()
     if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
         return;
 
-    if (animIndex == -1 || diff >= 1000.0) {
+    if (animIndex == -1 || diff >= bits[animIndex].duration) {
+        std::chrono::duration<int, std::milli> duration((int) bits[animIndex].duration);
+        timer += duration;
+        diff -= bits[animIndex].duration;
+
         animIndex++;
-        printf("NEW ANIMATION : (%d) %s : %lfs\n", bits[animIndex].type, bits[animIndex].reversed ? "true" : "false", bits[animIndex].duration);
+        /*
+        if (animIndex % 2 == 0) {
+            glClearColor(1.0f, 0.2f, 0.2f, 0.0f);
+        } else {
+            glClearColor(1.0f, 0.3f, 0.3f, 0.0f);
+        }
+        */
+
+        // printf("NEW ANIMATION : (%d) %s : %lfms\n", bits[animIndex].type, bits[animIndex].reversed ? "true" : "false", bits[animIndex].duration);
         if (bits[animIndex].type == END) {
             exit(0);
         }
         gSceneContext->SetCurrentAnimation(bits[animIndex].type, bits[animIndex].reversed);
-        timer = time;
+        // timer = time;
     }
 
-    gSceneContext->OnTimerClick();
+    double percent = diff / bits[animIndex].duration;
+    if (percent > 1.0) percent = 1.0;
+    gSceneContext->SetAnimationProgression(percent);
+
+    // gSceneContext->OnTimerClick();
 }
 
 // Refresh the application window.
