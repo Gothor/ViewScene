@@ -11,13 +11,17 @@ char toKnownCharacter(char c) {
         case 'O':
         case '0':
             return 'o';
+        case 'b':
+        case 'm':
+        case 'p':
+            return 'b';
         default:
             return ' ';
     }
 }
 
 void getAnimationKind(char from, char to, animation_bit_t* animation) {
-    const char froms[] = {0, 0, 'o'};
+    const char froms[] = {'b', 'b', 'o'};
     const char tos[] = {'a', 'o', 'a'};
     int i = 0;
 
@@ -82,13 +86,13 @@ animation_bit_t* getAnimationBits(char const* pText, int pLength, double pDurati
             continue;
         }
 
-        getAnimationKind(lLast == -1 ? 0 : lText[lLast], lText[i], &lBits[lCount]);
+        getAnimationKind(lLast == -1 ? 'b' : lText[lLast], lText[i], &lBits[lCount]);
         lBits[lCount].duration = pDuration * (i - lLast) / pLength;
 
         lLast = i;
         lCount++;
     }
-    getAnimationKind(lText[lLast], 0, &lBits[lCount]);
+    getAnimationKind(lText[lLast], 'b', &lBits[lCount]);
     lBits[lCount].duration = pDuration * (pLength - lLast) / pLength;
     lCount++;
 
