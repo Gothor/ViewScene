@@ -29,13 +29,14 @@ endif
 EXAMPLE     = ViewScene
 BINDIR      = ./build
 OBJDIR      = ./build
-LIBDIR      = /mnt/d/Rodolphe/Ubuntu/FBX/lib/gcc4/$(ARCH)/$(VARIANT)
-INCDIR      = /mnt/d/Rodolphe/Ubuntu/FBX/include
+LIBDIR      = /home/rodolphe/FBX/lib/gcc/$(ARCH)/$(VARIANT)
+INCDIR      = /home/rodolphe/FBX/include
 
 TARGET      = $(BINDIR)/$(EXAMPLE)
 OBJS  = \
 	./Common.o\
 	./TextToAnim.o\
+	./VocalSynthesis.o\
 	./DrawScene.o\
 	./DrawText.o\
 	./GetPosition.o\
@@ -66,7 +67,7 @@ else
     FBXSDK_LIB = $(LIBDIR)/libfbxsdk.a
 endif
 
-LIBS = $(FBXSDK_LIB) -L/home/rpeccatte/local/lib -lm -lrt -lstdc++ -lpthread -ldl $(EXTRA_LIBS) -lGL
+LIBS = $(FBXSDK_LIB) -L/home/rpeccatte/local/lib -lxml2 -lm -lrt -lstdc++ -lpthread -ldl $(EXTRA_LIBS) -lGL -lespeak
 
 .SUFFIXES: .cxx
 
@@ -77,6 +78,7 @@ $(TARGET): $(OBJS)
 #	$(LD) $(LDFLAGS) -o $@ $(OBJSFINAL) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS) $(RPATH_DEF)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS)
 	cp *.fbx $(BINDIR)
+	cp output.wav $(BINDIR)
 	cp FBX_ASCII_TEXTURE $(BINDIR)
 
 .c.o:

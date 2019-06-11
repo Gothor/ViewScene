@@ -39,6 +39,7 @@ this software in either electronic or hard copy form.
 
 #include "SceneContext.h"
 #include "TextToAnim.h"
+#include "VocalSynthesis.h"
 #include <GL4D/gl4du.h>
 #include <GL4D/gl4dg.h>
 #include <GL4D/gl4duw_SDL2.h>
@@ -80,8 +81,8 @@ const int MENU_ZOOM_POSITION     =          402;
 
 const int MENU_EXIT = 400;
 
-const int DEFAULT_WINDOW_WIDTH = 720;
-const int DEFAULT_WINDOW_HEIGHT = 486;
+const int DEFAULT_WINDOW_WIDTH = 1024;
+const int DEFAULT_WINDOW_HEIGHT = 800;
 
 GLuint _pId = 0;
 
@@ -145,17 +146,13 @@ public:
 };
 
 static bool gAutoQuit = false;
-const char* text = "m'o͡Uha͡I st'at͡Su:z g,o͡U b'ad";
 animation_bit_t* bits;
+SDL_AudioDeviceID deviceId;
+Uint8 *wavBuffer;
+Uint32 wavLength;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int i;
-
-    bits = getAnimationBits("k'0mEnt v'A: b'0rIs", 20, 1094.0);
-    for (i = 0; bits[i].type != END; i++) {
-        printf("(%d) %s : %lfs\n", bits[i].type, bits[i].reversed ? "true" : "false", bits[i].duration);
-    }
 
     // Set exit function to destroy objects created by the FBX SDK.
     atexit(ExitFunction);
@@ -166,16 +163,32 @@ int main(int argc, char** argv)
     FbxSetFreeHandler(MyMemoryAllocator::MyFree);
     FbxSetCallocHandler(MyMemoryAllocator::MyCalloc);
 
-	// glut initialisation
-    // glutInit(&argc, argv);
-    // glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    // glutInitWindowSize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT); 
-    // glutInitWindowPosition(100, 100);
-    // glutCreateWindow("ViewScene");
-
     if (!gl4duwCreateWindow(argc, argv, "GL4Dummies", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                             DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN))
         return 1;
+
+    const char* phonems = textToWav(argv[argc - 1], "output.wav");
+
+
+  SDL_InitSubSystem(SDL_INIT_AUDIO);
+
+  SDL_AudioSpec wavSpec;
+
+  SDL_LoadWAV("output.wav", &wavSpec, &wavBuffer, &wavLength);
+
+  int len = 0;
+  while (phonems[len++] != 0);
+
+    bits = getAnimationBits(phonems, len, wavLength / (22.05 * 2));
+    for (i = 0; bits[i].type != END; i++) {
+        printf("(%d) %s : %lfs\n", bits[i].type, bits[i].reversed ? "true" : "false", bits[i].duration);
+    }
+
+  deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
+
+  printf("Length: %lf\n", wavLength / 22050.0);
+
+  int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
 
     // Initialize OpenGL.
     const bool lSupportVBO = InitializeOpenGL();
@@ -234,6 +247,8 @@ void ExitFunction()
 {
     delete gSceneContext;
     free(bits);
+  SDL_CloseAudioDevice(deviceId);
+  SDL_FreeWAV(wavBuffer);
 }
 
 int animIndex = -1;
@@ -272,8 +287,13 @@ void TimerCallback()
         if (bits[animIndex].type == END) {
             exit(0);
         }
-        gSceneContext->SetCurrentAnimation(bits[animIndex].type, bits[animIndex].reversed);
+        if (bits[animIndex].type != NONE)
+            gSceneContext->SetCurrentAnimation(bits[animIndex].type, bits[animIndex].reversed);
         // timer = time;
+    }
+
+    if (bits[animIndex].type == NONE) {
+        return;
     }
 
     double percent = diff / bits[animIndex].duration;
@@ -299,6 +319,8 @@ void DisplayCallback()
         // status message is displayed before.
         gSceneContext->LoadFile();
         gSceneContext->SetCurrentAnimStack(0);
+        SDL_Delay(1000);
+        SDL_PauseAudioDevice(deviceId, 0);
     }
 
 	if( gAutoQuit ) exit(0);

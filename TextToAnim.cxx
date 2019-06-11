@@ -4,16 +4,26 @@
 
 char toKnownCharacter(char c) {
     switch (c) {
+				case 'i':
+				case 'j':
+            return 'i';
+				case 'A':
         case 'a':
-        case 'A':
+				case 'E':
             return 'a';
         case 'o':
         case 'O':
         case '0':
+				case 'y':
+				case '@':
             return 'o';
         case 'b':
         case 'm':
         case 'p':
+				case 'f':
+				case 'd':
+				case 't':
+				case 'v':
             return 'b';
         default:
             return ' ';
@@ -21,8 +31,8 @@ char toKnownCharacter(char c) {
 }
 
 void getAnimationKind(char from, char to, animation_bit_t* animation) {
-    const char froms[] = {'b', 'b', 'o'};
-    const char tos[] = {'a', 'o', 'a'};
+    const char froms[] = {'b', 'b', 'o', 'b', 'a', 'o'};
+    const char tos[] = {'a', 'o', 'a', 'i', 'i', 'i'};
     int i = 0;
 
     from = tolower(from);
@@ -63,7 +73,7 @@ animation_bit_t* getAnimationBits(char const* pText, int pLength, double pDurati
         if (lText[i] != ' ')
             lCount++;
     }
-    if (i != 1024) {
+    if (i == 1024) {
         lText[i - 1] = 0;
     }
     lCount += 2; // Pour que la bouche se referme à la fin et pour annoncer la fin de la liste
@@ -92,6 +102,8 @@ animation_bit_t* getAnimationBits(char const* pText, int pLength, double pDurati
         lLast = i;
         lCount++;
     }
+    printf("Duration: %lf\n", pDuration);
+    printf("%lf\n", pDuration * (pLength - lLast) / pLength);
     getAnimationKind(lText[lLast], 'b', &lBits[lCount]);
     lBits[lCount].duration = pDuration * (pLength - lLast) / pLength;
     lCount++;

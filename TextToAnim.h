@@ -5,6 +5,9 @@ typedef enum {
     CLOSE_TO_A = 0,
     CLOSE_TO_O = 1,
     O_TO_A = 2,
+    CLOSE_TO_I = 3,
+    A_TO_I = 4,
+    O_TO_I = 5,
     ANIM_KINDS,
 
     NONE = 999,
