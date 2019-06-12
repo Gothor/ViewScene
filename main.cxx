@@ -82,7 +82,7 @@ const int MENU_ZOOM_POSITION     =          402;
 const int MENU_EXIT = 400;
 
 const int DEFAULT_WINDOW_WIDTH = 1024;
-const int DEFAULT_WINDOW_HEIGHT = 800;
+const int DEFAULT_WINDOW_HEIGHT = 700;
 
 GLuint _pId = 0;
 
@@ -241,6 +241,10 @@ void GetSentence() {
     fflush(stdin);
     std::cout << "Entrez une phrase : ";
     fgets(str, 2048, stdin);
+
+    if (str[0] == 'e' && str[1] == 'x' && str[2] == 'i' && str[3] == 't') {
+      exit(0);
+    }
 
     const char* phonems = textToWav(str, "output.wav");
     SDL_AudioSpec wavSpec;
