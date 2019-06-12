@@ -6,6 +6,7 @@ char toKnownCharacter(char c) {
     switch (c) {
 				case 'i':
 				case 'j':
+        case 'e':
             return 'i';
 				case 'A':
         case 'a':
@@ -16,6 +17,7 @@ char toKnownCharacter(char c) {
         case '0':
 				case 'y':
 				case '@':
+        case 'u':
             return 'o';
         case 'b':
         case 'm':

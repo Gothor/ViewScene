@@ -147,7 +147,7 @@ public:
 
 static bool gAutoQuit = false;
 animation_bit_t* bits;
-SDL_AudioDeviceID deviceId;
+SDL_AudioDeviceID deviceId = -1;
 Uint8 *wavBuffer;
 Uint32 wavLength;
 
@@ -167,28 +167,7 @@ int main(int argc, char** argv) {
                             DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN))
         return 1;
 
-    const char* phonems = textToWav(argv[argc - 1], "output.wav");
-
-
   SDL_InitSubSystem(SDL_INIT_AUDIO);
-
-  SDL_AudioSpec wavSpec;
-
-  SDL_LoadWAV("output.wav", &wavSpec, &wavBuffer, &wavLength);
-
-  int len = 0;
-  while (phonems[len++] != 0);
-
-    bits = getAnimationBits(phonems, len, wavLength / (22.05 * 2));
-    for (i = 0; bits[i].type != END; i++) {
-        printf("(%d) %s : %lfs\n", bits[i].type, bits[i].reversed ? "true" : "false", bits[i].duration);
-    }
-
-  deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
-
-  printf("Length: %lf\n", wavLength / 22050.0);
-
-  int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
 
     // Initialize OpenGL.
     const bool lSupportVBO = InitializeOpenGL();
@@ -223,7 +202,7 @@ int main(int argc, char** argv) {
 static void init(void)
 {
     _pId = gl4duCreateProgram("<vs>../shaders/basic.vs", "<fs>../shaders/basic.fs", NULL);
-    glClearColor(1.0f, 0.2f, 0.2f, 0.0f);
+    glClearColor(0.5f, 0.2f, 0.2f, 0.0f);
 
     gl4duGenMatrix(GL_FLOAT, "modelViewMatrix");
     gl4duGenMatrix(GL_FLOAT, "projectionMatrix");
@@ -254,6 +233,41 @@ void ExitFunction()
 int animIndex = -1;
 std::chrono::steady_clock::time_point timer;
 
+bool playingSound = false;
+
+void GetSentence() {
+    int i;
+    char str[2048];
+    fflush(stdin);
+    std::cout << "Entrez une phrase : ";
+    fgets(str, 2048, stdin);
+
+    const char* phonems = textToWav(str, "output.wav");
+    SDL_AudioSpec wavSpec;
+
+    SDL_LoadWAV("output.wav", &wavSpec, &wavBuffer, &wavLength);
+
+    int len = 0;
+    while (phonems[len++] != 0);
+
+    if (bits != NULL) free(bits);
+
+      bits = getAnimationBits(phonems, len, wavLength / (22.05 * 2));
+      for (i = 0; bits[i].type != END; i++) {
+          printf("(%d) %s : %lfs\n", bits[i].type, bits[i].reversed ? "true" : "false", bits[i].duration);
+      }
+
+    if (deviceId == -1) {
+      deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
+      SDL_PauseAudioDevice(deviceId, 0);
+    }
+
+    printf("Length: %lf\n", wavLength / 22050.0);
+
+    int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
+    playingSound = true;
+}
+
 // Trigger the display of the current frame.
 void TimerCallback()
 {
@@ -266,8 +280,15 @@ void TimerCallback()
 
     // printf("diff : %lf\n", diff);
 
-    if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
+    if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED) {
         return;
+    }
+    
+    if (!playingSound) {
+      GetSentence();
+      animIndex = -1;
+      timer = std::chrono::steady_clock::now();
+    }
 
     if (animIndex == -1 || diff >= bits[animIndex].duration) {
         std::chrono::duration<int, std::milli> duration((int) bits[animIndex].duration);
@@ -285,7 +306,8 @@ void TimerCallback()
 
         // printf("NEW ANIMATION : (%d) %s : %lfms\n", bits[animIndex].type, bits[animIndex].reversed ? "true" : "false", bits[animIndex].duration);
         if (bits[animIndex].type == END) {
-            exit(0);
+            playingSound = false;
+            printf("DONE\n");
         }
         if (bits[animIndex].type != NONE)
             gSceneContext->SetCurrentAnimation(bits[animIndex].type, bits[animIndex].reversed);
@@ -313,16 +335,16 @@ void DisplayCallback()
     // Import the scene if it's ready to load.
     if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
     {
-
         // This function is only called in the first display callback
         // to make sure that the application window is opened and a 
         // status message is displayed before.
         gSceneContext->LoadFile();
         gSceneContext->SetCurrentAnimStack(0);
-        SDL_Delay(1000);
-        SDL_PauseAudioDevice(deviceId, 0);
+        gSceneContext->SetCurrentAnimation(0, false);
+        gSceneContext->SetAnimationProgression(0);
+        // SDL_Delay(1000);
+        // SDL_PauseAudioDevice(deviceId, 0);
     }
-
 	if( gAutoQuit ) exit(0);
 }
 

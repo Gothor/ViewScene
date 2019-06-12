@@ -78,7 +78,6 @@ $(TARGET): $(OBJS)
 #	$(LD) $(LDFLAGS) -o $@ $(OBJSFINAL) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS) $(RPATH_DEF)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) -L$(LIBDIR) -L. -L/usr/lib$(S64) -L/usr/X11R6/lib$(S64) $(LIBS)
 	cp *.fbx $(BINDIR)
-	cp output.wav $(BINDIR)
 	cp FBX_ASCII_TEXTURE $(BINDIR)
 
 .c.o:
